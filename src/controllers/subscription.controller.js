@@ -7,7 +7,8 @@ const PLAN_PRICES = {
 };
 
 export const createSubscription = async (req, res) => {
-  const { userId, plan, mealTypes, deliveryDays, allergies } = req.body;
+  const { plan, mealTypes, deliveryDays, allergies } = req.body;
+  const userId = req.user?.id; // Ambil dari JWT
 
   if (!userId || !plan || !mealTypes || !deliveryDays) {
     return res.status(400).json({ message: 'Missing required fields' });
@@ -16,6 +17,12 @@ export const createSubscription = async (req, res) => {
   if (!Array.isArray(mealTypes) || mealTypes.length === 0 || !Array.isArray(deliveryDays) || deliveryDays.length === 0) {
     return res.status(400).json({ message: 'Meal types and delivery days must be non-empty arrays' });
   }
+
+  const PLAN_PRICES = {
+    diet: 30000,
+    protein: 40000,
+    royal: 60000,
+  };
 
   const planPrice = PLAN_PRICES[plan.toLowerCase()];
   if (!planPrice) {
@@ -54,7 +61,7 @@ export const createSubscription = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Failed to create subscription', error: error.message });
   }
-};
+}
 
 export const getAllSubscriptions = async (req, res) => {
   try {
@@ -87,4 +94,4 @@ export const getAllSubscriptions = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch subscriptions', error: error.message });
   }
-};
+}
