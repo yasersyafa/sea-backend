@@ -35,6 +35,9 @@ export const createSubscription = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    const subscriber = await db.query('SELECT * FROM subscriptions WHERE userId = ?', userId)
+    if(subscriber) return res.status(403).json({ message: 'Already have a plan' })
+
     const totalPrice = Math.round(planPrice * mealTypes.length * deliveryDays.length * 4.3);
 
     const [result] = await db.query(
