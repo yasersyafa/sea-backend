@@ -12,7 +12,7 @@ export const getAllUsers = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch users', error: error.message });
   }
-};
+}
 
 // CREATE new user
 export const createUser = async (req, res) => {
@@ -41,4 +41,54 @@ export const createUser = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Failed to create user', error: error.message });
   }
-};
+}
+
+// login user
+export const loginUser = async (req, res) => {
+  const { email, password } = req.body
+
+  // cek if the email || password are missing
+  if(!email || !password)
+    return res.status(400).json({ message: 'Email and password are required' })
+
+  try {
+    const [users] = await db.query('SELECT * FROM USERS WHERE email = ?', [email])
+
+    // if user does not exist
+    if(users.length === 0)
+      return res.status(400).json({ message: 'User not found' })
+
+    const user = users[0]
+    const passwordMatch = await bcrypt.compare(password, user.password)
+
+    // if password not match
+    if(!passwordMatch)
+      return  res.status(401).json({ message: 'Invalid password' })
+
+    // generate the jwt
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        telephone: user.telephone,
+        role: user.role,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
+    )
+
+    res.json({
+      message: 'Login successfull',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        telephone: user.telephone,
+        role: user.role
+      }
+    })
+  } catch (error) {
+    res.status(500).json({ message: 'Login failed', error: error.message })
+  }
+}
