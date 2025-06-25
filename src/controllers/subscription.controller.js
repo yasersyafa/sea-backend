@@ -67,15 +67,57 @@ export const createSubscription = async (req, res) => {
 }
 
 export const getAllSubscriptions = async (req, res) => {
+  const isAdmin = req.user?.role === 'Admin'
   try {
+    let query = `
+        SELECT 
+            s.id, s.plan, s.mealTypes, s.deliveryDays, s.allergies, s.price,
+            u.id AS userId, u.name AS userName, u.telephone AS userPhone, u.email
+        FROM subscriptions s
+        JOIN users u ON s.userId = u.id
+    ` 
+    const params = []
+    if(!isAdmin) {
+        query += ' WHERE s.userId = ?'
+        params.push(req.user.id)
+    }
+
+    query += ' ORDER BY s.id DESC'
+    const [rows] = await db.query(query, params);
+
+    // Parse JSON fields
+    const subscriptions = rows.map(row => ({
+      id: row.id,
+      plan: row.plan,
+      mealTypes: JSON.parse(row.mealTypes),
+      deliveryDays: JSON.parse(row.deliveryDays),
+      allergies: row.allergies,
+      price: row.price,
+      user: {
+        id: row.userId,
+        name: row.userName,
+        phone: row.userPhone,
+        email: row.email
+      }
+    }));
+
+    res.status(200).json(subscriptions);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch subscriptions', error: error.message });
+  }
+}
+
+export const getOwnSubscription = async (req, res) => {
+    try {
     const [rows] = await db.query(`
       SELECT 
         s.id, s.plan, s.mealTypes, s.deliveryDays, s.allergies, s.price,
         u.id AS userId, u.name AS userName, u.telephone AS userPhone, u.email
       FROM subscriptions s
       JOIN users u ON s.userId = u.id
+      WHERE s.userId = ?
       ORDER BY s.id DESC
-    `);
+    `, [req.user.id]);
 
     // Parse JSON fields
     const subscriptions = rows.map(row => ({
