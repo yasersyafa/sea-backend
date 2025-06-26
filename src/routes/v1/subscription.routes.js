@@ -4,7 +4,7 @@ import {
   getAllSubscriptions,
   getOwnSubscription
 } from '../../controllers/subscription.controller.js';
-import { authenticate, authorizeRoles } from '../../middlewares/auth.middleware.js';
+import { authenticate } from '../../middlewares/auth.middleware.js';
 
 const router = Router();
 
